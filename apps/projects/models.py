@@ -44,6 +44,7 @@ class Task(models.Model):
         related_name="assigned_tasks",
     )
     due_date = models.DateField(null=True, blank=True)
+    version = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -72,3 +73,22 @@ class Report(models.Model):
 
     def __str__(self):
         return f"Report {self.id} for {self.project}"
+
+
+class IdempotencyKey(models.Model):
+    key = models.CharField(max_length=255)
+    organization = models.ForeignKey(
+        "accounts.Organization",
+        on_delete=models.CASCADE,
+        related_name="idempotency_keys",
+    )
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [("key", "organization")]

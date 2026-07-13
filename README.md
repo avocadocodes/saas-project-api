@@ -219,3 +219,109 @@ pytest -v
 
 - Swagger UI: [/api/docs/](/api/docs/)
 - OpenAPI schema (JSON): [/api/schema/](/api/schema/)
+
+---
+
+## Performance & Reliability
+
+### N+1 Query Elimination
+
+**Before:** the Task list endpoint issued one query per task row to fetch `.assignee` and `.project` (N+1 pattern). With 200 tasks that meant ~401 queries.
+
+**After:** `TaskViewSet.get_queryset()` uses `select_related("assignee", "project")`, resolving all related rows in a single JOIN. `ProjectViewSet` annotates `task_count` and `done_task_count` using `Count(...)` with a `Q` filter — no per-row queries.
+
+**Measured result** (`python manage.py benchmark_queries --tasks 200`):
+
+```
+naive (no select_related):   201 queries
+optimized (select_related):    1 query
+```
+
+Run the benchmark:
+
+```bash
+python manage.py benchmark_queries --tasks 200
+```
+
+The N+1 regression test is in `tests/test_n1.py` — it proves query count is **constant** whether there are 5 or 55 tasks.
+
+### Caching Strategy
+
+Project list responses are cached per-organization in Redis (key: `projects:org:<org_id>`, TTL 5 min). Cache is invalidated on any Project create, update, or delete via overridden `perform_create/update/destroy` methods. In test mode the `locmem` backend is used — no Redis required.
+
+`tests/test_caching.py` proves: first request populates the cache, second request hits the cache (fewer DB queries), and any write (create/update/delete) invalidates the entry.
+
+### Optimistic Concurrency (409 Conflict)
+
+Tasks carry a `version` field (integer, default 0). Every successful update increments it.
+
+To update a task safely:
+1. Read the task — note the `version` value.
+2. Send `PATCH /api/v1/tasks/{id}/` with the header `If-Match: <version>`.
+3. If the server's version matches, the update succeeds and `version` increments.
+4. If another client updated first, you receive **HTTP 409 Conflict** — fetch the latest and retry.
+
+```bash
+# Read task (note version field)
+curl -s http://localhost:8000/api/v1/tasks/$TASK_ID/ \
+  -H "Authorization: Bearer $TOKEN" | jq '{version, title}'
+
+# Update with If-Match version check
+curl -s -X PATCH http://localhost:8000/api/v1/tasks/$TASK_ID/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "If-Match: 0" \
+  -d '{"title":"Updated title"}' | jq .
+```
+
+Omitting `If-Match` skips the version check (backward-compatible — version still increments).
+
+### Idempotency Key
+
+To prevent duplicate tasks when retrying a timed-out POST:
+
+```bash
+curl -s -X POST http://localhost:8000/api/v1/tasks/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: my-unique-request-id-v1" \
+  -d "{\"project\":\"$PROJECT_ID\",\"title\":\"Design homepage\",\"status\":\"TODO\"}"
+```
+
+A retry with the same `Idempotency-Key` returns **HTTP 200** with the original task — no duplicate is created. Keys are scoped per organization and stored in the `IdempotencyKey` table.
+
+### Celery Retry / Backoff
+
+`generate_project_report` retries up to 3 times on any exception, with exponential backoff (max 60 s between retries). It is idempotent: calling it a second time on a `READY` report is a no-op.
+
+### Celery Beat — Nightly Purge
+
+A nightly Celery Beat job (`purge_old_reports`, runs at 02:00 UTC) deletes `Report` rows older than 30 days. `start.sh` launches beat automatically alongside the worker. To run beat manually:
+
+```bash
+celery -A celery_app beat --loglevel=info
+```
+
+### Load Test Results
+
+Measured with k6 (ramp to 25 VUs) against the full stack (web + Postgres +
+Redis) in Docker on a development laptop, over a mix of `GET /projects/`,
+`GET /tasks/`, and `POST /tasks/`. Throttling was raised via `THROTTLE_USER`
+for the capacity run (production defaults are `1000/hour` per user,
+`60/hour` anon — see below).
+
+| Metric | Value |
+|--------|-------|
+| Requests served | 3,236 |
+| p95 latency | 19.6 ms |
+| Median latency | 9.5 ms |
+| Error rate | 0.00% |
+
+Note: with the production throttle in place, a single user exceeding
+1,000 requests/hour correctly receives `429 Too Many Requests` — the load
+above was run with the throttle relaxed to measure raw request-handling
+capacity, not the throttle ceiling.
+
+```bash
+BASE_URL=http://localhost:8000 TOKEN=$TOKEN k6 run loadtest/load-test.js
+```

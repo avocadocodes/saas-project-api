@@ -3,7 +3,9 @@ set -e
 
 echo "Starting Celery worker in background..."
 celery -A celery_app worker --loglevel=info --concurrency=${CELERY_CONCURRENCY:-2} &
-CELERY_PID=$!
+
+echo "Starting Celery beat in background..."
+celery -A celery_app beat --loglevel=info &
 
 echo "Starting Gunicorn on port ${PORT:-8000}..."
 exec gunicorn config.wsgi:application \

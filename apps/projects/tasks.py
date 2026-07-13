@@ -1,13 +1,27 @@
+import logging
 from celery import shared_task
 from django.utils import timezone
 
+logger = logging.getLogger(__name__)
 
-@shared_task(bind=True)
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    max_retries=3,
+)
 def generate_project_report(self, report_id):
     from .models import Report, Task
 
+    report = Report.objects.get(id=report_id)
+
+    if report.status == Report.Status.READY:
+        logger.info("Report %s already READY — skipping.", report_id)
+        return
+
     try:
-        report = Report.objects.get(id=report_id)
         project = report.project
         tasks = Task.objects.filter(project=project)
 
@@ -30,10 +44,16 @@ def generate_project_report(self, report_id):
         report.completed_at = timezone.now()
         report.save()
     except Exception as exc:
-        if report_id:
-            try:
-                from .models import Report
-                Report.objects.filter(id=report_id).update(status=Report.Status.FAILED)
-            except Exception:
-                pass
+        Report.objects.filter(id=report_id).update(status=Report.Status.FAILED)
         raise exc
+
+
+@shared_task
+def purge_old_reports():
+    from .models import Report
+    from datetime import timedelta
+
+    cutoff = timezone.now() - timedelta(days=30)
+    deleted_count, _ = Report.objects.filter(created_at__lt=cutoff).delete()
+    logger.info("purge_old_reports: deleted %d reports older than 30 days.", deleted_count)
+    return deleted_count

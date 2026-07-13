@@ -103,8 +103,8 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "60/hour",
-        "user": "1000/hour",
+        "anon": os.environ.get("THROTTLE_ANON", "60/hour"),
+        "user": os.environ.get("THROTTLE_USER", "1000/hour"),
     },
 }
 
@@ -123,3 +123,29 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
+
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    "purge-old-reports-nightly": {
+        "task": "apps.projects.tasks.purge_old_reports",
+        "schedule": crontab(hour=2, minute=0),
+    },
+}
