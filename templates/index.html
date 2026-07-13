@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SaaS Project Management API</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #1a202c; }
+    .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 80px 24px; text-align: center; }
+    .hero h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 16px; }
+    .hero p { font-size: 1.2rem; opacity: 0.9; max-width: 600px; margin: 0 auto 32px; }
+    .btn { display: inline-block; padding: 12px 28px; border-radius: 6px; font-weight: 600; text-decoration: none; margin: 0 8px; }
+    .btn-primary { background: white; color: #667eea; }
+    .btn-outline { border: 2px solid white; color: white; }
+    .features { max-width: 960px; margin: 64px auto; padding: 0 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .card { background: white; border-radius: 8px; padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; color: #2d3748; }
+    .card p { color: #718096; line-height: 1.6; }
+    .endpoints { max-width: 960px; margin: 0 auto 64px; padding: 0 24px; }
+    .endpoints h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    th { background: #2d3748; color: white; padding: 12px 16px; text-align: left; font-size: 0.85rem; }
+    td { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; }
+    tr:last-child td { border-bottom: none; }
+    code { background: #edf2f7; padding: 2px 6px; border-radius: 3px; font-size: 0.85rem; }
+    footer { text-align: center; padding: 32px; color: #a0aec0; font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <h1>SaaS Project Management API</h1>
+    <p>A multi-tenant REST API for managing projects and tasks across organizations, with role-based access control and async reporting.</p>
+    <a href="/api/docs/" class="btn btn-primary">API Documentation</a>
+    <a href="/api/schema/" class="btn btn-outline">OpenAPI Schema</a>
+  </div>
+
+  <div class="features">
+    <div class="card">
+      <h3>Multi-Tenant Isolation</h3>
+      <p>Every organization's data is fully isolated. Querysets are scoped at the viewset level — cross-tenant access returns 404, not forbidden.</p>
+    </div>
+    <div class="card">
+      <h3>Role-Based Access Control</h3>
+      <p>Three roles: Owner, Admin, Member. Owners and Admins can delete projects; Members have read/write access to tasks without destructive operations.</p>
+    </div>
+    <div class="card">
+      <h3>Async Reporting</h3>
+      <p>Request a project report via POST; a Celery worker aggregates task counts and completion percentage asynchronously. Poll for results via GET.</p>
+    </div>
+    <div class="card">
+      <h3>JWT Authentication</h3>
+      <p>Register an organization, receive access and refresh tokens. Stateless authentication with configurable token lifetimes.</p>
+    </div>
+  </div>
+
+  <div class="endpoints">
+    <h2>Key Endpoints</h2>
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>POST</code></td><td>/api/v1/auth/register</td><td>Create organization + owner account</td></tr>
+        <tr><td><code>POST</code></td><td>/api/v1/auth/login</td><td>Obtain JWT tokens</td></tr>
+        <tr><td><code>POST</code></td><td>/api/v1/auth/refresh</td><td>Refresh access token</td></tr>
+        <tr><td><code>GET/POST</code></td><td>/api/v1/projects/</td><td>List or create projects</td></tr>
+        <tr><td><code>GET/PATCH/DELETE</code></td><td>/api/v1/projects/{id}/</td><td>Retrieve, update, or delete a project</td></tr>
+        <tr><td><code>POST</code></td><td>/api/v1/projects/{id}/report</td><td>Enqueue an async project report</td></tr>
+        <tr><td><code>GET/POST</code></td><td>/api/v1/tasks/</td><td>List or create tasks</td></tr>
+        <tr><td><code>GET</code></td><td>/api/v1/reports/{id}/</td><td>Poll report status and data</td></tr>
+        <tr><td><code>GET</code></td><td>/healthz</td><td>Health check (DB status)</td></tr>
+        <tr><td><code>GET</code></td><td>/api/docs/</td><td>Swagger UI</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>SaaS Project Management API &mdash; Built with Django REST Framework</footer>
+</body>
+</html>
