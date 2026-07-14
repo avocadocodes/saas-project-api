@@ -145,15 +145,24 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 
 if REDIS_URL:
+    _cache_options = {
+        "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        # A cache outage must never take down the API. Failed cache ops
+        # (including the throttle backend's) return None instead of raising.
+        "IGNORE_EXCEPTIONS": True,
+    }
+    # Managed Redis over TLS (e.g. Upstash rediss://) — don't verify the
+    # cert chain, mirroring the Celery broker connection.
+    if REDIS_URL.startswith("rediss://"):
+        _cache_options["CONNECTION_POOL_KWARGS"] = {"ssl_cert_reqs": None}
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",
             "LOCATION": REDIS_URL,
-            "OPTIONS": {
-                "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            },
+            "OPTIONS": _cache_options,
         }
     }
+    DJANGO_REDIS_IGNORE_EXCEPTIONS = True
 else:
     CACHES = {
         "default": {
