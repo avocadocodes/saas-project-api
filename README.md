@@ -1,6 +1,12 @@
 # SaaS Project Management API
 
-A production-quality multi-tenant REST API for project and task management. Organizations are isolated tenants; users belong to an organization with a role (Owner, Admin, Member); heavy operations run asynchronously via Celery.
+**In one sentence:** the backend for a team task-manager that many companies can use at once, where each company's data is completely walled off from every other's.
+
+Users log in, create projects and tasks within their organization, and role-based permissions decide who can do what (Owner / Admin / Member). Slow jobs like report generation run in the background so requests stay fast. Built as a production-quality multi-tenant REST API with Django REST Framework, Celery, and Redis.
+
+![Demo: register, create a project and task, and poll an async background report to completion](docs/demo.gif)
+
+**Live demo:** https://saas-project-api-0772.onrender.com — free-tier hosting sleeps when idle, so the first request takes ~40s to wake.
 
 ---
 
