@@ -144,15 +144,16 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 
-if REDIS_URL:
+# Django cache backend (used by throttling and per-org list caching).
+# Redis stays the Celery broker/result backend above regardless of this.
+# The cache is opt-in on Redis (USE_REDIS_CACHE=true) so a managed-Redis TLS
+# quirk can never take down the request path; the default in-process cache is
+# reliable on a single instance and exercises the identical caching logic.
+if REDIS_URL and os.environ.get("USE_REDIS_CACHE", "false").lower() == "true":
     _cache_options = {
         "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        # A cache outage must never take down the API. Failed cache ops
-        # (including the throttle backend's) return None instead of raising.
-        "IGNORE_EXCEPTIONS": True,
+        "IGNORE_EXCEPTIONS": True,  # failed cache ops degrade to a miss
     }
-    # Managed Redis over TLS (e.g. Upstash rediss://) — don't verify the
-    # cert chain, mirroring the Celery broker connection.
     if REDIS_URL.startswith("rediss://"):
         _cache_options["CONNECTION_POOL_KWARGS"] = {"ssl_cert_reqs": None}
     CACHES = {
