@@ -12,7 +12,8 @@ ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 # CORS — allow the web frontend to call the API from its own origin.
 _cors_origins = os.environ.get(
     "CORS_ALLOWED_ORIGINS",
-    "http://localhost:5173,http://localhost:4173,http://localhost:4174",
+    "http://localhost:5173,http://localhost:4173,http://localhost:4174,"
+    "https://groundwork-nikita.netlify.app",
 )
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins.split(",") if o.strip()]
 CORS_ALLOW_ALL_ORIGINS = os.environ.get("CORS_ALLOW_ALL", "false").lower() == "true"
