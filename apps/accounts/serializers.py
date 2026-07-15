@@ -14,14 +14,20 @@ def _split_name(name):
 
 class RegisterSerializer(serializers.Serializer):
     organization_name = serializers.CharField(max_length=255)
+    username = serializers.CharField(max_length=150)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
     name = serializers.CharField(max_length=300, required=False, default="")
     first_name = serializers.CharField(max_length=150, required=False, default="")
     last_name = serializers.CharField(max_length=150, required=False, default="")
 
+    def validate_username(self, value):
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError("This username is already taken.")
+        return value
+
     def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
+        if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError("A user with this email already exists.")
         return value
 
@@ -33,6 +39,7 @@ class RegisterSerializer(serializers.Serializer):
         with transaction.atomic():
             org = Organization.objects.create(name=validated_data["organization_name"])
             user = User.objects.create_user(
+                username=validated_data["username"],
                 email=validated_data["email"],
                 password=validated_data["password"],
                 first_name=first_name,
@@ -48,7 +55,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "first_name", "last_name", "role", "organization_name"]
+        fields = ["id", "username", "email", "first_name", "last_name", "role", "organization_name"]
         read_only_fields = fields
 
 
@@ -57,7 +64,7 @@ class MemberSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "name", "role"]
+        fields = ["id", "username", "email", "name", "role"]
         read_only_fields = fields
 
     def get_name(self, obj):
@@ -90,5 +97,11 @@ class InvitationCreateSerializer(serializers.Serializer):
 
 
 class AcceptInvitationSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150)
     name = serializers.CharField(max_length=300)
     password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_username(self, value):
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError("This username is already taken.")
+        return value

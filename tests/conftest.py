@@ -16,6 +16,7 @@ def org_b(db):
 @pytest.fixture
 def owner_a(db, org_a):
     return User.objects.create_user(
+        username="owner@alpha.com",
         email="owner@alpha.com",
         password="testpass123",
         organization=org_a,
@@ -26,6 +27,7 @@ def owner_a(db, org_a):
 @pytest.fixture
 def member_a(db, org_a):
     return User.objects.create_user(
+        username="member@alpha.com",
         email="member@alpha.com",
         password="testpass123",
         organization=org_a,
@@ -36,6 +38,7 @@ def member_a(db, org_a):
 @pytest.fixture
 def owner_b(db, org_b):
     return User.objects.create_user(
+        username="owner@beta.com",
         email="owner@beta.com",
         password="testpass123",
         organization=org_b,
@@ -61,10 +64,10 @@ def project_b(db, org_b):
     )
 
 
-def get_tokens_for_user(client, email, password):
+def get_tokens_for_user(client, username, password):
     response = client.post(
         "/api/v1/auth/login",
-        {"email": email, "password": password},
+        {"username": username, "password": password},
         content_type="application/json",
     )
     return response.data["access"]

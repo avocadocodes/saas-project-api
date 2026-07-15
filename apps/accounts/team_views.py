@@ -165,6 +165,7 @@ class AcceptInvitationView(APIView):
         first_name, last_name = _split_name(serializer.validated_data["name"])
         with transaction.atomic():
             user = User.objects.create_user(
+                username=serializer.validated_data["username"],
                 email=invite.email,
                 password=serializer.validated_data["password"],
                 first_name=first_name,

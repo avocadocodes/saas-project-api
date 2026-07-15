@@ -7,6 +7,7 @@ def test_register_creates_org_and_owner(client):
         "/api/v1/auth/register",
         {
             "organization_name": "Acme Corp",
+            "username": "jane",
             "email": "admin@acme.com",
             "password": "securepass123",
             "first_name": "Jane",
@@ -17,6 +18,7 @@ def test_register_creates_org_and_owner(client):
     assert response.status_code == 201
     data = response.json()
     assert data["user"]["role"] == "OWNER"
+    assert data["user"]["username"] == "jane"
     assert data["user"]["organization_name"] == "Acme Corp"
     assert "access" in data
     assert "refresh" in data
@@ -26,6 +28,7 @@ def test_register_creates_org_and_owner(client):
 def test_register_duplicate_email_returns_400(client):
     payload = {
         "organization_name": "Acme Corp",
+        "username": "acme",
         "email": "admin@acme.com",
         "password": "securepass123",
     }
@@ -38,7 +41,7 @@ def test_register_duplicate_email_returns_400(client):
 def test_login_returns_tokens(client, owner_a):
     response = client.post(
         "/api/v1/auth/login",
-        {"email": "owner@alpha.com", "password": "testpass123"},
+        {"username": "owner@alpha.com", "password": "testpass123"},
         content_type="application/json",
     )
     assert response.status_code == 200
@@ -50,7 +53,7 @@ def test_login_returns_tokens(client, owner_a):
 def test_login_wrong_password_returns_401(client, owner_a):
     response = client.post(
         "/api/v1/auth/login",
-        {"email": "owner@alpha.com", "password": "wrongpassword"},
+        {"username": "owner@alpha.com", "password": "wrongpassword"},
         content_type="application/json",
     )
     assert response.status_code == 401
@@ -60,7 +63,7 @@ def test_login_wrong_password_returns_401(client, owner_a):
 def test_token_refresh(client, owner_a):
     login = client.post(
         "/api/v1/auth/login",
-        {"email": "owner@alpha.com", "password": "testpass123"},
+        {"username": "owner@alpha.com", "password": "testpass123"},
         content_type="application/json",
     )
     refresh_token = login.json()["refresh"]
