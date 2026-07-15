@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.projects",
     "apps.health",
+    "apps.copilot",
 ]
 
 MIDDLEWARE = [
@@ -171,6 +172,12 @@ else:
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         }
     }
+
+# Workspace copilot — grounded answers over the org's projects/tasks via any
+# OpenAI-compatible chat endpoint (Groq by default). No key => copilot is off.
+COPILOT_LLM_API_BASE = os.environ.get("COPILOT_LLM_API_BASE", "https://api.groq.com/openai/v1")
+COPILOT_LLM_API_KEY = os.environ.get("GROQ_API_KEY", "")
+COPILOT_MODEL = os.environ.get("COPILOT_MODEL", "llama-3.3-70b-versatile")
 
 from celery.schedules import crontab
 

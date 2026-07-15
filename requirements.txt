@@ -9,6 +9,7 @@ django-redis==5.4.0
 dj-database-url==2.2.0
 django-filter==24.2
 django-cors-headers==4.4.0
+certifi==2024.7.4
 gunicorn==22.0.0
 pytest==8.2.2
 pytest-django==4.8.0
