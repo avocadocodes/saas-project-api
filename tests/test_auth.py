@@ -25,6 +25,23 @@ def test_register_creates_org_and_owner(client):
 
 
 @pytest.mark.django_db
+def test_register_duplicate_org_name_gets_unique_slug(client):
+    """Two organizations may share a display name; slugs are auto-uniquified."""
+    first = client.post(
+        "/api/v1/auth/register",
+        {"organization_name": "Acme", "username": "acme1", "email": "a@acme.com", "password": "securepass123"},
+        content_type="application/json",
+    )
+    second = client.post(
+        "/api/v1/auth/register",
+        {"organization_name": "Acme", "username": "acme2", "email": "b@acme.com", "password": "securepass123"},
+        content_type="application/json",
+    )
+    assert first.status_code == 201
+    assert second.status_code == 201
+
+
+@pytest.mark.django_db
 def test_register_duplicate_email_returns_400(client):
     payload = {
         "organization_name": "Acme Corp",
