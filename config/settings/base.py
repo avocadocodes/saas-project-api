@@ -179,6 +179,13 @@ COPILOT_LLM_API_BASE = os.environ.get("COPILOT_LLM_API_BASE", "https://api.groq.
 COPILOT_LLM_API_KEY = os.environ.get("GROQ_API_KEY", "")
 COPILOT_MODEL = os.environ.get("COPILOT_MODEL", "llama-3.3-70b-versatile")
 
+# Gemini embeddings power document retrieval for the copilot. No key => docs
+# simply aren't embedded (the copilot still answers over tasks/projects).
+GEMINI_API_BASE = os.environ.get("GEMINI_API_BASE", "https://generativelanguage.googleapis.com/v1beta")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_EMBED_MODEL = os.environ.get("GEMINI_EMBED_MODEL", "gemini-embedding-001")
+GEMINI_EMBED_DIM = int(os.environ.get("GEMINI_EMBED_DIM", "768"))
+
 from celery.schedules import crontab
 
 CELERY_BEAT_SCHEDULE = {
