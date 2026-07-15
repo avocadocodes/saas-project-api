@@ -16,6 +16,7 @@ class RegisterSerializer(serializers.Serializer):
     organization_name = serializers.CharField(max_length=255)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
+    name = serializers.CharField(max_length=300, required=False, default="")
     first_name = serializers.CharField(max_length=150, required=False, default="")
     last_name = serializers.CharField(max_length=150, required=False, default="")
 
@@ -25,13 +26,17 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def create(self, validated_data):
+        first_name = validated_data.get("first_name", "")
+        last_name = validated_data.get("last_name", "")
+        if not first_name and validated_data.get("name"):
+            first_name, last_name = _split_name(validated_data["name"])
         with transaction.atomic():
             org = Organization.objects.create(name=validated_data["organization_name"])
             user = User.objects.create_user(
                 email=validated_data["email"],
                 password=validated_data["password"],
-                first_name=validated_data.get("first_name", ""),
-                last_name=validated_data.get("last_name", ""),
+                first_name=first_name,
+                last_name=last_name,
                 organization=org,
                 role=User.Role.OWNER,
             )

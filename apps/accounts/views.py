@@ -29,3 +29,11 @@ class RegisterView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class MeView(APIView):
+    """Return the currently authenticated user (used after login)."""
+
+    @extend_schema(responses={200: UserSerializer}, summary="Current user")
+    def get(self, request):
+        return Response(UserSerializer(request.user).data)
