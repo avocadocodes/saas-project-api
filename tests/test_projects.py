@@ -17,7 +17,7 @@ def test_list_projects_scoped_to_org(client, owner_a, project_a, project_b):
 
 @pytest.mark.django_db
 def test_cross_tenant_project_access_returns_404(client, owner_a, project_b):
-    """A user from org A cannot access org B's project — returns 404."""
+    """A user from org A cannot access org B's project - returns 404."""
     token = get_tokens_for_user(client, "owner@alpha.com", "testpass123")
     response = client.get(
         f"/api/v1/projects/{project_b.id}/",

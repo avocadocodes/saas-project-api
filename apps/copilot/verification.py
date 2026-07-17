@@ -2,7 +2,7 @@
 
 After the copilot drafts an answer, each sentence (claim) is checked against
 the retrieved evidence by an LLM acting as an entailment judge. Claims the
-evidence doesn't support are flagged — the anti-hallucination guard, carried
+evidence doesn't support are flagged - the anti-hallucination guard, carried
 over from the RAG project but done without a local NLI model.
 """
 

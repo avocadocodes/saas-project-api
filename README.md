@@ -6,7 +6,7 @@ Users log in, create projects and tasks within their organization, and role-base
 
 ![Demo: register, create a project and task, and poll an async background report to completion](docs/demo.gif)
 
-**Live demo:** https://saas-project-api-0772.onrender.com — free-tier hosting sleeps when idle, so the first request takes ~40s to wake.
+**Live demo:** https://saas-project-api-0772.onrender.com - free-tier hosting sleeps when idle, so the first request takes ~40s to wake.
 
 ---
 
@@ -62,7 +62,7 @@ Teams managing multiple projects need a reliable, secure backend that keeps each
 Every request is authenticated via JWT. The token payload carries the user's ID, from which `request.user.organization` is resolved. The `TenantQuerysetMixin` in `apps/projects/views.py` overrides `get_queryset()` to filter all results by `organization=request.user.organization`. `perform_create()` stamps the `organization` field automatically.
 
 **Cross-tenant access is structurally impossible:**
-- A user from Org A querying `/api/v1/projects/{org_b_project_id}/` gets a 404, not a 403 — the object doesn't exist in their queryset.
+- A user from Org A querying `/api/v1/projects/{org_b_project_id}/` gets a 404, not a 403 - the object doesn't exist in their queryset.
 - Serializer-level validation on Task also checks that the `project` and `assignee` belong to the requesting user's organization.
 - There are regression tests confirming both 404 behavior (`test_cross_tenant_project_access_returns_404`) and task list isolation (`test_cross_tenant_task_not_visible`).
 
@@ -90,7 +90,7 @@ Implemented in `apps/projects/permissions.py` as a `ProjectPermission` class. De
 2. API creates a `Report` record with `status=PENDING`, returns `202 Accepted` with the report ID.
 3. `generate_project_report.delay(report_id)` is enqueued to Celery via Redis.
 4. Celery worker picks up the task, aggregates task counts (total, done, in_progress, todo, completion %), writes results to `Report.data`, sets `status=READY`.
-5. Client: `GET /api/v1/reports/{id}/` — polls until `status` is `READY`.
+5. Client: `GET /api/v1/reports/{id}/` - polls until `status` is `READY`.
 
 In test mode (`CELERY_TASK_ALWAYS_EAGER=True`), tasks execute synchronously, so tests don't need a live Redis/Celery.
 
@@ -199,7 +199,7 @@ curl -s http://localhost:8000/healthz | jq .
 
 ## Running Tests
 
-Tests use SQLite in-memory and Celery eager mode — no external services needed.
+Tests use SQLite in-memory and Celery eager mode - no external services needed.
 
 ```bash
 pip install -r requirements.txt
@@ -234,7 +234,7 @@ pytest -v
 
 **Before:** the Task list endpoint issued one query per task row to fetch `.assignee` and `.project` (N+1 pattern). With 200 tasks that meant ~401 queries.
 
-**After:** `TaskViewSet.get_queryset()` uses `select_related("assignee", "project")`, resolving all related rows in a single JOIN. `ProjectViewSet` annotates `task_count` and `done_task_count` using `Count(...)` with a `Q` filter — no per-row queries.
+**After:** `TaskViewSet.get_queryset()` uses `select_related("assignee", "project")`, resolving all related rows in a single JOIN. `ProjectViewSet` annotates `task_count` and `done_task_count` using `Count(...)` with a `Q` filter - no per-row queries.
 
 **Measured result** (`python manage.py benchmark_queries --tasks 200`):
 
@@ -249,11 +249,11 @@ Run the benchmark:
 python manage.py benchmark_queries --tasks 200
 ```
 
-The N+1 regression test is in `tests/test_n1.py` — it proves query count is **constant** whether there are 5 or 55 tasks.
+The N+1 regression test is in `tests/test_n1.py` - it proves query count is **constant** whether there are 5 or 55 tasks.
 
 ### Caching Strategy
 
-Project list responses are cached per-organization in Redis (key: `projects:org:<org_id>`, TTL 5 min). Cache is invalidated on any Project create, update, or delete via overridden `perform_create/update/destroy` methods. In test mode the `locmem` backend is used — no Redis required.
+Project list responses are cached per-organization in Redis (key: `projects:org:<org_id>`, TTL 5 min). Cache is invalidated on any Project create, update, or delete via overridden `perform_create/update/destroy` methods. In test mode the `locmem` backend is used - no Redis required.
 
 `tests/test_caching.py` proves: first request populates the cache, second request hits the cache (fewer DB queries), and any write (create/update/delete) invalidates the entry.
 
@@ -262,10 +262,10 @@ Project list responses are cached per-organization in Redis (key: `projects:org:
 Tasks carry a `version` field (integer, default 0). Every successful update increments it.
 
 To update a task safely:
-1. Read the task — note the `version` value.
+1. Read the task - note the `version` value.
 2. Send `PATCH /api/v1/tasks/{id}/` with the header `If-Match: <version>`.
 3. If the server's version matches, the update succeeds and `version` increments.
-4. If another client updated first, you receive **HTTP 409 Conflict** — fetch the latest and retry.
+4. If another client updated first, you receive **HTTP 409 Conflict** - fetch the latest and retry.
 
 ```bash
 # Read task (note version field)
@@ -280,7 +280,7 @@ curl -s -X PATCH http://localhost:8000/api/v1/tasks/$TASK_ID/ \
   -d '{"title":"Updated title"}' | jq .
 ```
 
-Omitting `If-Match` skips the version check (backward-compatible — version still increments).
+Omitting `If-Match` skips the version check (backward-compatible - version still increments).
 
 ### Idempotency Key
 
@@ -294,13 +294,13 @@ curl -s -X POST http://localhost:8000/api/v1/tasks/ \
   -d "{\"project\":\"$PROJECT_ID\",\"title\":\"Design homepage\",\"status\":\"TODO\"}"
 ```
 
-A retry with the same `Idempotency-Key` returns **HTTP 200** with the original task — no duplicate is created. Keys are scoped per organization and stored in the `IdempotencyKey` table.
+A retry with the same `Idempotency-Key` returns **HTTP 200** with the original task - no duplicate is created. Keys are scoped per organization and stored in the `IdempotencyKey` table.
 
 ### Celery Retry / Backoff
 
 `generate_project_report` retries up to 3 times on any exception, with exponential backoff (max 60 s between retries). It is idempotent: calling it a second time on a `READY` report is a no-op.
 
-### Celery Beat — Nightly Purge
+### Celery Beat - Nightly Purge
 
 A nightly Celery Beat job (`purge_old_reports`, runs at 02:00 UTC) deletes `Report` rows older than 30 days. `start.sh` launches beat automatically alongside the worker. To run beat manually:
 
@@ -314,7 +314,7 @@ Measured with k6 (ramp to 25 VUs) against the full stack (web + Postgres +
 Redis) in Docker on a development laptop, over a mix of `GET /projects/`,
 `GET /tasks/`, and `POST /tasks/`. Throttling was raised via `THROTTLE_USER`
 for the capacity run (production defaults are `1000/hour` per user,
-`60/hour` anon — see below).
+`60/hour` anon - see below).
 
 | Metric | Value |
 |--------|-------|
@@ -324,7 +324,7 @@ for the capacity run (production defaults are `1000/hour` per user,
 | Error rate | 0.00% |
 
 Note: with the production throttle in place, a single user exceeding
-1,000 requests/hour correctly receives `429 Too Many Requests` — the load
+1,000 requests/hour correctly receives `429 Too Many Requests` - the load
 above was run with the throttle relaxed to measure raw request-handling
 capacity, not the throttle ceiling.
 

@@ -18,7 +18,7 @@ def generate_project_report(self, report_id):
     report = Report.objects.get(id=report_id)
 
     if report.status == Report.Status.READY:
-        logger.info("Report %s already READY — skipping.", report_id)
+        logger.info("Report %s already READY - skipping.", report_id)
         return
 
     try:

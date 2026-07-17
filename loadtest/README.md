@@ -50,9 +50,9 @@ BASE_URL=http://localhost:8000 TOKEN=$TOKEN k6 run loadtest/load-test.js
 
 ## What it tests
 
-- `GET /api/v1/projects/` — every iteration
-- `GET /api/v1/tasks/` — every iteration
-- `POST /api/v1/tasks/` — ~10% of iterations
+- `GET /api/v1/projects/` - every iteration
+- `GET /api/v1/tasks/` - every iteration
+- `POST /api/v1/tasks/` - ~10% of iterations
 
 ## Pass/fail thresholds
 

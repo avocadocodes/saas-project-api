@@ -40,7 +40,7 @@ def test_task_update_returns_409_on_stale_version(client, owner_a, project_a):
     )
     assert r_b.status_code == 200
 
-    # Client A tries with stale version 0 — must get 409
+    # Client A tries with stale version 0 - must get 409
     r_a = client.patch(
         f"/api/v1/tasks/{task.id}/",
         {"title": "Client A stale update"},
@@ -54,7 +54,7 @@ def test_task_update_returns_409_on_stale_version(client, owner_a, project_a):
 
 @pytest.mark.django_db
 def test_task_update_without_if_match_always_succeeds(client, owner_a, project_a):
-    """Omitting If-Match header is backward-compatible — version still increments."""
+    """Omitting If-Match header is backward-compatible - version still increments."""
     token = get_tokens_for_user(client, "owner@alpha.com", "testpass123")
     task = Task.objects.create(
         project=project_a, title="Original", status=Task.Status.TODO, version=5

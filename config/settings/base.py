@@ -9,7 +9,7 @@ DEBUG = os.environ.get("DEBUG", "true").lower() == "true"
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 
-# CORS — allow the web frontend to call the API from its own origin.
+# CORS - allow the web frontend to call the API from its own origin.
 _cors_origins = os.environ.get(
     "CORS_ALLOWED_ORIGINS",
     "http://localhost:5173,http://localhost:4173,http://localhost:4174,"
@@ -173,7 +173,7 @@ else:
         }
     }
 
-# Workspace copilot — grounded answers over the org's projects/tasks via any
+# Workspace copilot - grounded answers over the org's projects/tasks via any
 # OpenAI-compatible chat endpoint (Groq by default). No key => copilot is off.
 COPILOT_LLM_API_BASE = os.environ.get("COPILOT_LLM_API_BASE", "https://api.groq.com/openai/v1")
 COPILOT_LLM_API_KEY = os.environ.get("GROQ_API_KEY", "")

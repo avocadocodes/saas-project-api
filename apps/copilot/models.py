@@ -31,7 +31,7 @@ class Document(models.Model):
 
 class DocumentChunk(models.Model):
     """A chunk of a document with its embedding (stored as a float list so the
-    ranking works on any database — cosine similarity is computed in Python)."""
+    ranking works on any database - cosine similarity is computed in Python)."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="chunks")

@@ -12,7 +12,7 @@ from rest_framework.response import Response
 @api_view(["GET"])
 @authentication_classes([])
 @permission_classes([AllowAny])
-@throttle_classes([])  # never touch the cache — the platform health check must not 500
+@throttle_classes([])  # never touch the cache - the platform health check must not 500
 def healthz(request):
     try:
         connection.ensure_connection()

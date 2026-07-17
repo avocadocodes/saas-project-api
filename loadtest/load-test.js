@@ -26,7 +26,7 @@ function authHeaders() {
 export function setup() {
   if (!TOKEN) {
     console.warn(
-      "TOKEN env var is empty — set TOKEN=<jwt> before running or all requests will fail auth."
+      "TOKEN env var is empty - set TOKEN=<jwt> before running or all requests will fail auth."
     );
   }
 }

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add N+1 query elimination, Redis caching with invalidation, optimistic concurrency + idempotency on Tasks, Celery robustness (idempotent task + beat), a k6 load test script, and a Performance & Reliability README section — all fully tested without Redis/Postgres.
+**Goal:** Add N+1 query elimination, Redis caching with invalidation, optimistic concurrency + idempotency on Tasks, Celery robustness (idempotent task + beat), a k6 load test script, and a Performance & Reliability README section - all fully tested without Redis/Postgres.
 
 **Architecture:** Task `version` field enables optimistic locking via `If-Match` header; idempotency uses a lightweight `IdempotencyKey` model (SQLite-safe, no Redis required); Redis caching wraps the project-list queryset with per-org cache keys and is invalidated via `post_save`/`post_delete` signals; the `benchmark_queries` management command instruments both a naive and optimized queryset so the before/after is a printed measurement.
 
@@ -50,7 +50,7 @@
 Replace the Task model definition and add after Report:
 
 ```python
-# In apps/projects/models.py — add version field to Task:
+# In apps/projects/models.py - add version field to Task:
 
 class Task(models.Model):
     class Status(models.TextChoices):
@@ -389,7 +389,7 @@ def _task_viewset_exception_handler(exc, context):
     return drf_exception_handler(exc, context)
 ```
 
-Wait — the custom exception handler approach above is messy. Use a cleaner pattern: raise a DRF exception directly. Replace `ConcurrentModificationError` with a proper DRF APIException subclass.
+Wait - the custom exception handler approach above is messy. Use a cleaner pattern: raise a DRF exception directly. Replace `ConcurrentModificationError` with a proper DRF APIException subclass.
 
 Full clean `apps/projects/views.py`:
 
@@ -569,7 +569,7 @@ class ReportViewSet(viewsets.ReadOnlyModelViewSet):
 
 ---
 
-## Task 4: N+1 fix — optimize querysets (already in Task 3's views.py)
+## Task 4: N+1 fix - optimize querysets (already in Task 3's views.py)
 
 The optimized querysets are already embedded in Task 3. This task just verifies the existing tests still pass and the new test file is clean.
 
@@ -655,8 +655,8 @@ def test_project_list_uses_annotation_not_per_row_queries(client, owner_a, org_a
 ## Task 5: Redis caching + invalidation test
 
 **Files:**
-- Modify: `config/settings/base.py` — add CACHES
-- Modify: `config/settings/test.py` — override CACHES to locmem
+- Modify: `config/settings/base.py` - add CACHES
+- Modify: `config/settings/test.py` - override CACHES to locmem
 - Create: `tests/test_caching.py`
 
 - [ ] **Step 1: Add CACHES to base.py**
@@ -763,7 +763,7 @@ def test_cache_invalidated_on_project_create(client, owner_a, project_a):
     client.get("/api/v1/projects/", HTTP_AUTHORIZATION=f"Bearer {token}")
     assert cache.get(cache_key) is not None
 
-    # Create a new project — should invalidate cache
+    # Create a new project - should invalidate cache
     client.post(
         "/api/v1/projects/",
         {"name": "New Project", "status": "ACTIVE"},
@@ -837,7 +837,7 @@ def test_task_update_returns_409_on_stale_version(client, owner_a, project_a):
         HTTP_IF_MATCH="0",
     )
 
-    # Client A tries with stale version 0 — must get 409
+    # Client A tries with stale version 0 - must get 409
     response = client.patch(
         f"/api/v1/tasks/{task.id}/",
         {"title": "Client A stale update"},
@@ -918,12 +918,12 @@ def test_different_idempotency_keys_create_separate_tasks(client, owner_a, proje
 
 ---
 
-## Task 7: Celery robustness — idempotency guard + autoretry + beat
+## Task 7: Celery robustness - idempotency guard + autoretry + beat
 
 **Files:**
 - Modify: `apps/projects/tasks.py`
-- Modify: `config/settings/base.py` — add beat_schedule
-- Modify: `start.sh` — add beat process
+- Modify: `config/settings/base.py` - add beat_schedule
+- Modify: `start.sh` - add beat process
 - Create: `tests/test_celery_robustness.py`
 
 - [ ] **Step 1: Rewrite tasks.py with idempotency guard + autoretry + purge task**
@@ -949,7 +949,7 @@ def generate_project_report(self, report_id):
     report = Report.objects.get(id=report_id)
 
     if report.status == Report.Status.READY:
-        logger.info("Report %s already READY — skipping.", report_id)
+        logger.info("Report %s already READY - skipping.", report_id)
         return
 
     try:
@@ -1061,7 +1061,7 @@ def test_report_task_is_idempotent(owner_a, project_a):
     assert report.status == Report.Status.READY
     first_completed_at = report.completed_at
 
-    # Call again — should be a no-op
+    # Call again - should be a no-op
     generate_project_report(str(report.id))
 
     report.refresh_from_db()
@@ -1111,8 +1111,8 @@ def test_purge_old_reports_deletes_old_and_keeps_new(owner_a, project_a):
 
 - [ ] **Step 1: Create management package init files**
 
-`apps/projects/management/__init__.py` — empty file.
-`apps/projects/management/commands/__init__.py` — empty file.
+`apps/projects/management/__init__.py` - empty file.
+`apps/projects/management/commands/__init__.py` - empty file.
 
 - [ ] **Step 2: Write the benchmark command**
 
@@ -1314,9 +1314,9 @@ BASE_URL=http://localhost:8000 TOKEN=$TOKEN k6 run loadtest/load-test.js
 
 ## What it tests
 
-- GET /api/v1/projects/ — 100% of iterations
-- GET /api/v1/tasks/ — 100% of iterations
-- POST /api/v1/tasks/ — ~10% of iterations (random)
+- GET /api/v1/projects/ - 100% of iterations
+- GET /api/v1/tasks/ - 100% of iterations
+- POST /api/v1/tasks/ - ~10% of iterations (random)
 
 ## Thresholds
 
@@ -1326,7 +1326,7 @@ BASE_URL=http://localhost:8000 TOKEN=$TOKEN k6 run loadtest/load-test.js
 
 ---
 
-## Task 10: README — Performance & Reliability section
+## Task 10: README - Performance & Reliability section
 
 **Files:**
 - Modify: `README.md`
@@ -1344,7 +1344,7 @@ Add after the "## API Documentation" section:
 
 **Before:** the Task list endpoint issued one query per task to fetch `.assignee` and `.project` (N+1). With 200 tasks that meant 401 queries.
 
-**After:** `TaskViewSet.get_queryset()` uses `select_related("assignee", "project")`. The `ProjectViewSet` annotates `task_count` and `done_task_count` in a single SQL query using `Count(...)` with a `Q` filter — no per-row queries.
+**After:** `TaskViewSet.get_queryset()` uses `select_related("assignee", "project")`. The `ProjectViewSet` annotates `task_count` and `done_task_count` in a single SQL query using `Count(...)` with a `Q` filter - no per-row queries.
 
 **Measured result (run `benchmark_queries` yourself to fill in):**
 ```
@@ -1357,11 +1357,11 @@ Run it:
 python manage.py benchmark_queries --tasks 200
 ```
 
-The N+1 proof is in `tests/test_n1.py` — `assertNumQueries` shows the query count is **constant** as rows grow from 5 to 55.
+The N+1 proof is in `tests/test_n1.py` - `assertNumQueries` shows the query count is **constant** as rows grow from 5 to 55.
 
 ### Caching Strategy
 
-Project list responses are cached per-organization in Redis (key: `projects:org:<id>`, TTL 5 min). On Project or Task create/update/delete, the relevant cache keys are deleted via `perform_create/update/destroy` overrides. In test mode, `locmem` backend is used — no Redis needed.
+Project list responses are cached per-organization in Redis (key: `projects:org:<id>`, TTL 5 min). On Project or Task create/update/delete, the relevant cache keys are deleted via `perform_create/update/destroy` overrides. In test mode, `locmem` backend is used - no Redis needed.
 
 Tests in `tests/test_caching.py` prove: first request populates cache, second request has fewer queries (cache hit), create/delete invalidates the entry.
 
@@ -1370,10 +1370,10 @@ Tests in `tests/test_caching.py` prove: first request populates cache, second re
 Tasks carry a `version` field (integer, default 0, auto-incremented on every update).
 
 To update a task safely:
-1. Read the task — note the `version` value.
+1. Read the task - note the `version` value.
 2. Send `PATCH /api/v1/tasks/{id}/` with header `If-Match: <version>`.
 3. If the version matches the server's, the update succeeds and `version` is bumped.
-4. If another client updated first, you get **HTTP 409 Conflict** — fetch the latest and retry.
+4. If another client updated first, you get **HTTP 409 Conflict** - fetch the latest and retry.
 
 ```bash
 # Read task, note version
@@ -1402,13 +1402,13 @@ curl -s -X POST http://localhost:8000/api/v1/tasks/ \
   -d "{\"project\":\"$PROJECT_ID\",\"title\":\"Design homepage\",\"status\":\"TODO\"}"
 ```
 
-A retry with the same `Idempotency-Key` returns **HTTP 200** with the original task — no duplicate created. Keys are scoped per organization.
+A retry with the same `Idempotency-Key` returns **HTTP 200** with the original task - no duplicate created. Keys are scoped per organization.
 
 ### Celery Retry / Backoff
 
 `generate_project_report` retries up to 3 times on any exception, with exponential backoff (max 60 s between retries). It is idempotent: calling it on a `READY` report is a no-op.
 
-### Celery Beat — Nightly Purge
+### Celery Beat - Nightly Purge
 
 A nightly Celery Beat job (`purge_old_reports`, runs at 02:00 UTC) deletes Reports older than 30 days. Start beat alongside the worker:
 
@@ -1437,34 +1437,34 @@ Run: `BASE_URL=http://localhost:8000 TOKEN=$TOKEN k6 run loadtest/load-test.js`
 ## Self-Review Checklist
 
 **Spec coverage:**
-1. N+1 elimination with `select_related` + annotate — Task 3 (views.py) + Task 4 (test_n1.py) ✓
-2. `benchmark_queries` management command — Task 8 ✓
-3. Redis caching with locmem fallback — Task 5 (settings) ✓
-4. Cache invalidation on write — Task 3 (perform_create/update/destroy) ✓
-5. Cache tests — Task 5 (test_caching.py) ✓
-6. `version` field on Task — Task 1 (model + migration) ✓
-7. `If-Match` → 409 on conflict — Task 3 (views.py) + Task 6 (test_concurrency.py) ✓
-8. `Idempotency-Key` header dedup — Task 3 (views.py) + Task 6 (test_concurrency.py) ✓
-9. `IdempotencyKey` model + migration — Task 1 ✓
-10. `generate_project_report` idempotency guard — Task 7 ✓
-11. autoretry + retry_backoff — Task 7 ✓
-12. Beat task `purge_old_reports` — Task 7 ✓
-13. Beat task wired in settings + start.sh — Task 7 ✓
-14. Celery robustness tests — Task 7 ✓
-15. k6 load test — Task 9 ✓
-16. README Performance section — Task 10 ✓
-17. `django-redis` in requirements.txt — Task 5 ✓
+1. N+1 elimination with `select_related` + annotate - Task 3 (views.py) + Task 4 (test_n1.py) ✓
+2. `benchmark_queries` management command - Task 8 ✓
+3. Redis caching with locmem fallback - Task 5 (settings) ✓
+4. Cache invalidation on write - Task 3 (perform_create/update/destroy) ✓
+5. Cache tests - Task 5 (test_caching.py) ✓
+6. `version` field on Task - Task 1 (model + migration) ✓
+7. `If-Match` → 409 on conflict - Task 3 (views.py) + Task 6 (test_concurrency.py) ✓
+8. `Idempotency-Key` header dedup - Task 3 (views.py) + Task 6 (test_concurrency.py) ✓
+9. `IdempotencyKey` model + migration - Task 1 ✓
+10. `generate_project_report` idempotency guard - Task 7 ✓
+11. autoretry + retry_backoff - Task 7 ✓
+12. Beat task `purge_old_reports` - Task 7 ✓
+13. Beat task wired in settings + start.sh - Task 7 ✓
+14. Celery robustness tests - Task 7 ✓
+15. k6 load test - Task 9 ✓
+16. README Performance section - Task 10 ✓
+17. `django-redis` in requirements.txt - Task 5 ✓
 
 **Type consistency check:**
-- `IdempotencyKey` used consistently across models.py, migration, views.py — ✓
-- `ConflictError` defined and raised in views.py only — ✓
-- `_org_projects_cache_key` / `_project_detail_cache_key` defined once at top of views.py — ✓
-- `version` field: default=0, IntegerField — consistent across model, serializer, tests ✓
+- `IdempotencyKey` used consistently across models.py, migration, views.py - ✓
+- `ConflictError` defined and raised in views.py only - ✓
+- `_org_projects_cache_key` / `_project_detail_cache_key` defined once at top of views.py - ✓
+- `version` field: default=0, IntegerField - consistent across model, serializer, tests ✓
 
-**Placeholder scan:** No TBDs in code (only in README benchmark numbers + load test results table, which are intentional fill-in-after-running placeholders) — ✓
+**Placeholder scan:** No TBDs in code (only in README benchmark numbers + load test results table, which are intentional fill-in-after-running placeholders) - ✓
 
 **Existing test compatibility:**
-- `test_tasks.py::test_create_task` — still passes; `version=0` is a new field with a default, not required in POST body
-- `test_projects.py` — still passes; no API shape change
-- `test_reports.py` — still passes; report task now has idempotency guard but still sets READY
-- `test_auth.py` — untouched ✓
+- `test_tasks.py::test_create_task` - still passes; `version=0` is a new field with a default, not required in POST body
+- `test_projects.py` - still passes; no API shape change
+- `test_reports.py` - still passes; report task now has idempotency guard but still sets READY
+- `test_auth.py` - untouched ✓

@@ -4,7 +4,7 @@ Two sources, combined (hybrid):
   - projects & tasks  -> lexical (keyword) ranking over structured records
   - document chunks   -> vector (cosine) ranking over Gemini embeddings
 
-The per-org corpus is small, so cosine is computed in Python — no vector
+The per-org corpus is small, so cosine is computed in Python - no vector
 extension required, and it runs identically on SQLite and Postgres.
 """
 
